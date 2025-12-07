@@ -62,11 +62,14 @@
             margin-bottom: 20px;
             overflow: hidden;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
+
         #reader { width: 100%; height: 100%; }
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important; /* 화면 꽉 차게 */
+        }
         
         /* 카메라 꺼졌을 때 보이는 버튼 */
         #camera-placeholder {
@@ -312,11 +315,27 @@ const Game = {
         if(!Game.scanner) {
             Game.scanner = new Html5Qrcode("reader");
         }
-        const config = { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 };
+        
+        // [수정된 설정]
+        const config = { 
+            fps: 10,
+            // qrbox를 고정 숫자가 아닌 함수로 설정하여 화면 비율에 맞춤
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+                // 화면의 70% 크기로 정사각형 박스를 만듦
+                const minEdgePercentage = 0.70;
+                const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                return {
+                    width: qrboxSize,
+                    height: qrboxSize
+                };
+            },
+            aspectRatio: 1.0 // 1:1 비율 유지 (인스타그램 카메라처럼)
+        };
         
         Game.scanner.start({ facingMode: "environment" }, config, Game.onScan)
         .catch(err => {
-            alert("카메라 권한 오류입니다.");
+            alert("카메라 시작 오류: " + err);
             Game.closeCamera();
         });
     },
