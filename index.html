@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QR 보물찾기_by금배과학</title>
+    <title>QR 보물찾기 v12</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     
@@ -14,9 +14,9 @@
         :root {
             --primary: #4CAF50;
             --secondary: #FF9800;
+            --danger: #FF5722;
             --bg: #F0F9F0;
             --text: #333;
-            --locked: #7f8c8d;
         }
         body {
             font-family: 'Gamja Flower', sans-serif;
@@ -25,6 +25,7 @@
             padding: 0;
             color: var(--text);
             text-align: center;
+            user-select: none; /* 텍스트 선택 방지 (앱처럼 보이게) */
         }
         
         .container {
@@ -35,6 +36,7 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         /* 1. 시작 화면 */
@@ -49,45 +51,47 @@
         .main-img { width: 80%; max-height: 300px; object-fit: cover; border-radius: 20px; margin: 20px 0; }
 
         /* 2. 게임 화면 */
-        #game-screen { display: none; padding: 20px; }
+        #game-screen { display: none; padding: 20px; padding-bottom: 60px; }
         #reader { width: 100%; border-radius: 15px; overflow: hidden; background: #000; margin-bottom: 20px; }
 
-        /* 🔥 [핵심] 최종 목표 구역 (상단 보물상자) */
+        /* 상단 목표 구역 (선물상자) */
         .goal-area {
-            background: #fff3e0;
+            background: #fff8e1;
             border: 2px dashed var(--secondary);
             border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 10px;
+            margin-bottom: 15px;
             cursor: pointer;
             transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
         .goal-area:active { transform: scale(0.98); }
-        .goal-icon { font-size: 4rem; display: block; margin-bottom: 5px; }
-        .goal-title { font-size: 1.3rem; margin: 0; color: #d35400; font-weight: bold; }
-        .goal-progress { font-size: 1rem; color: #666; margin-top: 5px; }
+        .goal-icon { font-size: 3rem; }
+        .goal-info { text-align: left; }
+        .goal-title { font-size: 1.2rem; margin: 0; color: #d35400; font-weight: bold; }
+        .goal-progress { font-size: 0.9rem; color: #666; margin-top: 2px; }
         
-        /* 잠금 해제 애니메이션 */
+        /* 애니메이션 */
         @keyframes shake {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            50% { transform: rotate(5deg); }
-            75% { transform: rotate(-5deg); }
-            100% { transform: rotate(0deg); }
+            0% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0deg); }
         }
-        .unlocked-anim { animation: shake 0.5s infinite; }
+        .unlocked-anim { animation: shake 0.5s infinite; border-color: #27ae60 !important; background: #e8f8f5 !important; }
 
         /* 가방 (인벤토리) */
         .bag-container { background: #eee; border-radius: 15px; padding: 15px; }
-        .bag-title { margin: 0 0 10px 0; font-size: 1.2rem; }
-        .grid-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .grid-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;}
         .item-slot {
             aspect-ratio: 1/1; background: white; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
+            cursor: pointer; position: relative;
         }
         .item-slot.locked { color: #ccc; background: #ddd; cursor: default; }
+        .item-check { position: absolute; bottom: -5px; right: -5px; font-size: 1rem; }
 
         /* 3. 팝업 */
         .modal-overlay {
@@ -108,13 +112,31 @@
         .btn {
             background: var(--primary); color: white; border: none;
             padding: 12px 30px; font-size: 1.2rem; border-radius: 50px;
-            cursor: pointer; font-family: 'Gamja Flower', sans-serif; margin-top: 10px;
+            cursor: pointer; font-family: 'Gamja Flower', sans-serif; margin-top: 10px; width: 100%;
         }
         .btn-secondary { background: var(--secondary); }
+        .btn-danger { background: var(--danger); margin-top: 5px; font-size: 1rem; padding: 8px 20px;}
+        
         input[type="text"] {
             width: 80%; padding: 10px; font-size: 1.1rem;
             border: 2px solid #ddd; border-radius: 10px; margin: 10px 0; text-align: center;
         }
+
+        /* 관리자 버튼 */
+        .admin-btn {
+            margin-top: 30px;
+            background: none; border: 1px solid #ccc; color: #999;
+            padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;
+        }
+
+        /* 토스트 메시지 (Alert 대체용) */
+        #toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            text-align: center; border-radius: 50px; padding: 16px; position: fixed;
+            z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%);
+            font-size: 1rem; opacity: 0; transition: opacity 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; }
     </style>
 </head>
 <body>
@@ -126,74 +148,80 @@
         <p id="subtitle-text" style="font-size: 1.2rem; color: #666;">잠시만 기다려주세요</p>
         <img id="intro-img" class="main-img" src="" alt="Intro">
         <p id="intro-desc" style="white-space: pre-wrap;">설명글 로딩중...</p>
-        <button class="btn" onclick="Game.start()">탐험 시작하기! ▶</button>
-        <p style="font-size: 0.8rem; color: #aaa; margin-top: 30px;">QR URL: <span id="site-url-text"></span></p>
+        <button class="btn" onclick="Game.start()">모험 이어하기 / 시작 ▶</button>
+        
+        <p style="font-size: 0.8rem; color: #aaa; margin-top: 30px;">
+            QR URL: <span id="site-url-text"></span>
+        </p>
     </div>
 
     <div id="game-screen">
         
         <div id="final-goal" class="goal-area" onclick="Game.checkFinalStatus()">
-            <span id="final-icon" class="goal-icon">🔒</span>
-            <h3 id="final-title" class="goal-title">비밀의 보물상자</h3>
-            <p id="final-progress" class="goal-progress">열쇠 찾는 중... (0/0)</p>
+            <div id="final-icon" class="goal-icon">🎁</div>
+            <div class="goal-info">
+                <div id="final-title" class="goal-title">최종 보물상자</div>
+                <div id="final-progress" class="goal-progress">열쇠 모으는 중... (0/0)</div>
+            </div>
         </div>
 
-        <h2>📷 QR 스캔</h2>
+        <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">📷 QR 스캔</div>
         <div id="reader"></div>
-        <p id="scan-status">카메라를 불러오는 중입니다...</p>
+        <p id="scan-status" style="font-size: 0.9rem; color:#666;">카메라를 물체에 가까이 대세요</p>
 
         <div class="bag-container">
-            <h3 class="bag-title">🎒 획득한 열쇠들</h3>
+            <div style="font-weight: bold; margin-bottom: 5px;">🎒 나의 가방</div>
             <div id="inventory-grid" class="grid-box"></div>
         </div>
+
+        <button class="admin-btn" onclick="Admin.openMenu()">⚙️ 관리자 설정</button>
     </div>
 
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
-            <button class="btn-secondary" style="position:absolute; top:10px; right:10px; padding:5px 10px; font-size:1rem;" onclick="Popup.close()">✖</button>
+            <button class="btn-secondary" style="position:absolute; top:10px; right:10px; padding:5px 10px; font-size:1rem; width:auto;" onclick="Popup.close()">✖</button>
             <div id="modal-content"></div>
         </div>
     </div>
+    
+    <div id="toast">메시지</div>
 
 </div>
 
 <script>
 /**
  * ============================================================================
- * 🛠️ [선생님 설정 구역] gameConfig
+ * 🛠️ [gameConfig] 설정 영역
  * ============================================================================
  */
 const gameConfig = {
-    
     // 1. 기본 설정
     meta: {
-        title: "🕵️‍♀️ 학교 보물찾기 v11",
-        subTitle: "모든 단서를 모아 최종 보물을 찾아라!",
-        siteUrl: "https://funnyjeb.github.io/qr-treasure/", 
-        introImage: "https://github.com/user-attachments/assets/220de704-10c2-434f-98b6-e7c954fce30a",
-        introDesc: "학교 곳곳에 숨겨진 동물을 모두 찾으면,\n맨 위의 '비밀 상자'가 열립니다!\n과연 마지막 보물은 어디에 있을까요?",
+        title: "🕵️‍♀️ 학교 보물찾기 v12",
+        subTitle: "친구들을 모두 찾아 선물상자를 열어보세요!",
+        siteUrl: "https://teacher.github.io/qr-game", 
+        introImage: "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        introDesc: "학교 곳곳에 숨겨진 QR코드를 찾아보세요.\n새로고침해도 찾은 기록은 유지됩니다!",
+        
+        // 퀴즈 메시지 (화면 아래에 잠시 떴다 사라짐)
         msgCorrect: "정답입니다! 🎉",
-        msgWrong: "틀렸습니다. 다시 생각해보세요. 😅",
-        msgAlreadyFound: "이미 찾은 친구입니다!"
+        msgWrong: "틀렸습니다. 다시 시도해보세요. 😅",
+        msgAlreadyFound: "이미 찾은 보물입니다!"
     },
 
-    // 2. 🔥 [New] 최종 보상 설정 (모두 다 모았을 때)
+    // 2. 최종 보상 (모두 모았을 때)
     finalReward: {
-        icon: "🎁", // 열렸을 때 아이콘
-        title: "축하합니다! 보물상자 오픈!",
-        // 최종 장소 힌트나 사진
-        images: [
-            "https://cdn-icons-png.flaticon.com/512/2855/2855523.png", 
-            // 실제 보물 위치 사진을 여기에 넣으세요
-        ],
-        desc: "모든 열쇠를 모았습니다!\n\n진짜 보물은 [과학실 뒤편 사물함] 안에 있습니다.\n비밀번호는 1234 입니다."
+        icon: "🔓", // 열렸을 때 아이콘
+        title: "축하합니다!",
+        images: ["https://cdn-icons-png.flaticon.com/512/2855/2855523.png"], 
+        desc: "모든 미션을 완료했습니다!\n선생님께 이 화면을 보여주세요."
     },
 
-    // 3. QR코드 데이터 (아이템 리스트)
+    // 3. QR코드 데이터 (ID는 'cat', 'ball' 등 단어 사용)
     qrData: {
         "cat": {
             icon: "🦁",
-            name: "용맹한 사자",
+            name: "사자",
             quiz: {
                 active: true,
                 question: "백수의 왕이라 불리는 동물은?",
@@ -201,7 +229,7 @@ const gameConfig = {
             },
             reward: {
                 images: ["https://cdn-icons-png.flaticon.com/512/616/616408.png"],
-                desc: "사자를 찾았습니다! (1번 열쇠 획득)"
+                desc: "사자를 찾았습니다!"
             }
         },
         "ball": {
@@ -214,16 +242,16 @@ const gameConfig = {
             },
             reward: {
                 images: [],
-                desc: "축구공을 찾았습니다! (2번 열쇠 획득)"
+                desc: "축구공을 찾았습니다!"
             }
         },
         "star": {
             icon: "⭐",
             name: "별",
-            quiz: { active: false }, // 퀴즈 없이 획득
+            quiz: { active: false },
             reward: {
                 images: [],
-                desc: "반짝이는 별을 찾았습니다!"
+                desc: "별을 획득했습니다!"
             }
         }
     }
@@ -234,6 +262,8 @@ const gameConfig = {
  * 🚀 [시스템 로직]
  * ============================================================================
  */
+const STORAGE_KEY = "qr_treasure_v12_save"; // 저장소 키 이름
+
 const Game = {
     foundItems: new Set(),
     totalItems: 0,
@@ -241,17 +271,24 @@ const Game = {
     isScanning: false,
 
     init: () => {
-        // 메타 정보 적용
+        // 텍스트 적용
         document.getElementById('title-text').innerText = gameConfig.meta.title;
         document.getElementById('subtitle-text').innerText = gameConfig.meta.subTitle;
         document.getElementById('intro-img').src = gameConfig.meta.introImage;
         document.getElementById('intro-desc').innerText = gameConfig.meta.introDesc;
         document.getElementById('site-url-text').innerText = gameConfig.meta.siteUrl;
 
-        // 전체 아이템 수 계산
         Game.totalItems = Object.keys(gameConfig.qrData).length;
+
+        // ★ [저장된 데이터 불러오기]
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            parsed.forEach(id => {
+                if(gameConfig.qrData[id]) Game.foundItems.add(id);
+            });
+        }
         
-        // 인벤토리 및 목표창 초기화
         Game.updateUI();
     },
 
@@ -259,11 +296,23 @@ const Game = {
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         
-        Game.scanner = new Html5Qrcode("reader");
-        Game.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, Game.onScan)
+        // 카메라 실행
+        if(!Game.scanner) {
+            Game.scanner = new Html5Qrcode("reader");
+        }
+        
+        // 카메라 설정 (모바일 최적화)
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 200, height: 200 },
+            aspectRatio: 1.0 
+        };
+        
+        Game.scanner.start({ facingMode: "environment" }, config, Game.onScan)
         .catch(err => {
-            document.getElementById('scan-status').innerText = "카메라 권한이 필요합니다.";
+            document.getElementById('scan-status').innerText = "카메라 권한 오류: 새로고침 해주세요.";
         });
+        
         Game.isScanning = true;
     },
 
@@ -273,15 +322,25 @@ const Game = {
         const id = decodedText.trim();
         const item = gameConfig.qrData[id];
 
-        if (!item) { alert("잘못된 QR코드입니다."); return; }
+        // 1. 유효하지 않은 코드
+        if (!item) { 
+            Toast.show("알 수 없는 QR코드입니다.");
+            // 잘못된 코드 스캔 시 잠시 멈췄다 자동 재개 (연속 스캔 방지)
+            Game.pauseScan();
+            setTimeout(Game.resumeScan, 2000);
+            return; 
+        }
+
+        // 2. 이미 찾은 아이템
         if (Game.foundItems.has(id)) {
             Game.pauseScan();
-            alert(gameConfig.meta.msgAlreadyFound);
+            Toast.show(gameConfig.meta.msgAlreadyFound);
             setTimeout(Game.resumeScan, 1500);
             return;
         }
 
-        Game.pauseScan();
+        // 3. 새로운 발견
+        Game.pauseScan(); // 팝업 띄울 동안만 스캔 중지
         if (item.quiz && item.quiz.active) {
             Popup.showQuiz(id);
         } else {
@@ -291,61 +350,66 @@ const Game = {
 
     getItem: (id) => {
         Game.foundItems.add(id);
-        Game.updateUI();
         
-        // 아이템 획득 팝업 닫을 때 게임 클리어 체크를 위해 플래그 전달
+        // ★ [데이터 저장]
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...Game.foundItems]));
+        
+        Game.updateUI();
         Popup.showReward(id, true);
     },
 
-    // 화면 갱신 (가방 + 상단 목표창)
     updateUI: () => {
-        // 1. 가방 그리기
+        // 가방 업데이트
         const grid = document.getElementById('inventory-grid');
         grid.innerHTML = "";
         Object.keys(gameConfig.qrData).forEach(key => {
             const item = gameConfig.qrData[key];
             const isFound = Game.foundItems.has(key);
+            
             const slot = document.createElement('div');
             slot.className = `item-slot ${isFound ? '' : 'locked'}`;
-            slot.innerText = isFound ? item.icon : "❓";
-            if (isFound) slot.onclick = () => { Game.pauseScan(); Popup.showReward(key, false); };
+            slot.innerText = isFound ? item.icon : ""; // 못 찾았으면 빈칸
+            
+            if (!isFound) {
+                // 잠김 아이콘 (작게)
+                slot.innerHTML = `<span style="font-size:1rem; opacity:0.5;">❓</span>`;
+            } else {
+                // 찾음 체크 표시
+                slot.innerHTML += `<span class="item-check">✅</span>`;
+                slot.onclick = () => { Game.pauseScan(); Popup.showReward(key, false); };
+            }
             grid.appendChild(slot);
         });
 
-        // 2. 상단 목표창 업데이트
+        // 상단 목표창 업데이트
         const current = Game.foundItems.size;
         const total = Game.totalItems;
-        const progressText = document.getElementById('final-progress');
         const finalIcon = document.getElementById('final-icon');
         const finalTitle = document.getElementById('final-title');
+        const finalProgress = document.getElementById('final-progress');
         const goalArea = document.getElementById('final-goal');
 
         if (current >= total) {
-            // 클리어 상태
             finalIcon.innerText = gameConfig.finalReward.icon;
-            finalTitle.innerText = "보물상자 열림!";
+            finalTitle.innerText = "상자 열림! (터치)";
             finalTitle.style.color = "#27ae60";
-            progressText.innerText = "터치하여 확인하세요!";
-            goalArea.style.backgroundColor = "#e8f8f5";
-            goalArea.style.border = "2px solid #27ae60";
-            goalArea.classList.add('unlocked-anim'); // 흔들리는 애니메이션
+            finalProgress.innerText = "축하합니다! 모든 열쇠 획득!";
+            goalArea.classList.add('unlocked-anim');
         } else {
-            // 진행 중
-            finalIcon.innerText = "🔒";
-            finalTitle.innerText = "비밀의 보물상자";
-            progressText.innerText = `열쇠 찾는 중... (${current}/${total})`;
+            finalIcon.innerText = "🎁";
+            finalTitle.innerText = "최종 보물상자";
+            finalTitle.style.color = "#d35400";
+            finalProgress.innerText = `열쇠 모으는 중... (${current}/${total})`;
+            goalArea.classList.remove('unlocked-anim');
         }
     },
 
-    // 상단 보물상자 클릭 시
     checkFinalStatus: () => {
         if (Game.foundItems.size >= Game.totalItems) {
-            // 최종 보상 팝업
             Game.pauseScan();
             Popup.showFinalReward();
         } else {
-            // 아직 부족함
-            alert(`아직 열쇠가 부족해요!\n${Game.foundItems.size}개 찾았습니다.\n총 ${Game.totalItems}개를 찾아야 합니다.`);
+            Toast.show(`아직 열쇠가 부족해요! (${Game.foundItems.size}/${Game.totalItems})`);
         }
     },
 
@@ -361,23 +425,34 @@ const Popup = {
         const item = gameConfig.qrData[id];
         Popup.content.innerHTML = `
             <h2>🧩 퀴즈!</h2>
-            <p style="font-size:1.1rem; font-weight:bold;">${item.quiz.question}</p>
+            <p style="font-size:1.2rem; font-weight:bold;">${item.quiz.question}</p>
             <input type="text" id="quiz-input" placeholder="정답 입력" autocomplete="off">
             <br>
+            <div id="quiz-msg" style="color:red; height:20px; font-size:0.9rem;"></div>
             <button class="btn" onclick="Popup.checkAnswer('${id}')">확인</button>
         `;
         Popup.overlay.style.display = "flex";
+        document.getElementById('quiz-input').focus();
     },
 
     checkAnswer: (id) => {
         const input = document.getElementById('quiz-input').value.trim().toLowerCase().replace(/\s+/g, '');
         const answers = gameConfig.qrData[id].quiz.answers.map(a => a.toLowerCase().replace(/\s+/g, ''));
-        
+        const msgBox = document.getElementById('quiz-msg');
+
         if (answers.includes(input)) {
-            alert(gameConfig.meta.msgCorrect);
+            Toast.show(gameConfig.meta.msgCorrect);
             Game.getItem(id);
         } else {
-            alert(gameConfig.meta.msgWrong);
+            // Alert 대신 화면 내 메시지 사용 (카메라 멈춤 방지)
+            msgBox.innerText = gameConfig.meta.msgWrong;
+            document.getElementById('quiz-input').value = "";
+            document.getElementById('quiz-input').focus();
+            
+            // 틀렸을 때도 잠깐 진동 효과
+            const inputEl = document.getElementById('quiz-input');
+            inputEl.style.borderColor = "red";
+            setTimeout(() => inputEl.style.borderColor = "#ddd", 500);
         }
     },
 
@@ -390,16 +465,19 @@ const Popup = {
         }
 
         Popup.content.innerHTML = `
-            <div style="font-size:3rem;">${item.icon}</div>
+            <div style="font-size:4rem;">${item.icon}</div>
             <h2>${item.name}</h2>
             ${imgHtml}
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; text-align:left; white-space: pre-wrap;">${item.reward.desc}</div>
             <button class="btn btn-secondary" onclick="Popup.closeAndCheckClear()">확인</button>
+            ${!isNew ? `<button class="btn btn-danger" onclick="Admin.deleteItem('${id}')" style="display:none;" id="admin-del-btn">관리자: 획득 취소</button>` : ''}
         `;
         Popup.overlay.style.display = "flex";
+        
+        // 관리자 모드일 때만 삭제 버튼 보이기
+        if(Admin.isAdmin && !isNew) document.getElementById('admin-del-btn').style.display = "block";
     },
 
-    // 최종 보상 팝업
     showFinalReward: () => {
         const final = gameConfig.finalReward;
         let imgHtml = "";
@@ -407,7 +485,6 @@ const Popup = {
             imgHtml = `<div class="image-scroll-box">` + 
                 final.images.map(url => `<img src="${url}" class="reward-img">`).join('') + `</div>`;
         }
-
         Popup.content.innerHTML = `
             <div style="font-size:4rem;">${final.icon}</div>
             <h2 style="color:#27ae60;">${final.title}</h2>
@@ -418,15 +495,13 @@ const Popup = {
         Popup.overlay.style.display = "flex";
     },
 
-    // 팝업 닫을 때 클리어 여부 확인해서 바로 최종화면 띄워주기
     closeAndCheckClear: () => {
         Popup.close();
-        // 마지막 아이템이었다면 바로 최종 팝업 띄우기
         if (Game.foundItems.size === Game.totalItems) {
             setTimeout(() => {
-                alert("🎉 모든 열쇠를 찾았습니다! 보물상자가 열립니다!");
+                Toast.show("🎉 모든 미션 완료!");
                 Popup.showFinalReward();
-            }, 500);
+            }, 600);
         }
     },
 
@@ -436,6 +511,54 @@ const Popup = {
     }
 };
 
+const Toast = {
+    show: (message) => {
+        const toast = document.getElementById("toast");
+        toast.className = "show";
+        toast.innerText = message;
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+};
+
+/**
+ * ============================================================================
+ * ⚙️ [관리자 모드]
+ * ============================================================================
+ */
+const Admin = {
+    isAdmin: false,
+    
+    openMenu: () => {
+        const password = prompt("관리자 비밀번호를 입력하세요 (기본: 1234)");
+        if (password === "1234") {
+            Admin.isAdmin = true;
+            const action = prompt("원하는 작업을 선택하세요:\n1. 게임 초기화 (모든 기록 삭제)\n2. 취소");
+            
+            if (action === "1") {
+                if(confirm("정말 모든 기록을 삭제하고 처음부터 시작합니까?")) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
+                }
+            } else {
+                alert("관리자 모드가 활성화되었습니다.\n이제 가방에서 아이템을 눌러 '삭제'할 수 있습니다.");
+            }
+        } else {
+            if(password !== null) alert("비밀번호가 틀렸습니다.");
+        }
+    },
+
+    deleteItem: (id) => {
+        if(confirm("이 아이템 획득을 취소하시겠습니까?")) {
+            Game.foundItems.delete(id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([...Game.foundItems]));
+            Game.updateUI();
+            Popup.close();
+            Toast.show("삭제되었습니다.");
+        }
+    }
+};
+
+// 시작
 document.addEventListener("DOMContentLoaded", Game.init);
 </script>
 </body>
