@@ -217,19 +217,21 @@ const gameConfig = {
     
     // 1. 기본 설정
     meta: {
-        title: "🕵️‍♀️ 숲속의 동물 찾기 v10",
-        subTitle: "학교 정원에 숨겨진 친구들을 찾아라!",
+        title: "🕵️‍♀️ 숲속의 동물 찾기",
+        subTitle: "학교에 숨겨진 동물QR을 찾아라!",
         
         // 이 주소는 화면 하단에 표시되어 선생님이 확인하기 좋습니다.
-        siteUrl: "https://teacher.github.io/qr-game", 
+        siteUrl: "https://funnyjeb.github.io/qr-treasure2", 
         
         // 시작 화면 이미지 (깃허브 이슈 이미지 주소 추천)
-        introImage: "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        introImage: "https://private-user-images.githubusercontent.com/111253985/523448750-220de704-10c2-434f-98b6-e7c954fce30a.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjUxMDQwODgsIm5iZiI6MTc2NTEwMzc4OCwicGF0aCI6Ii8xMTEyNTM5ODUvNTIzNDQ4NzUwLTIyMGRlNzA0LTEwYzItNDM0Zi05OGI2LWU3Yzk1NGZjZTMwYS5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwN1QxMDM2MjhaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT02OGYzNjMyM2JiMzc4YWQxMDNlMDU3NTY4MWU4ZGE3OGMzNzJjYTg3NWFiNmNiODNjYmEwY2ZhMGQwMzFmYjIyJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.c4JCPsAwgs9dJ3dsXaC4dl73qSRtY1Qwv_1jUiglRH0",
         
         introDesc: `[게임 방법]
-1. 학교 곳곳에 숨겨진 QR코드를 찾으세요.
-2. 퀴즈를 맞히면 동물을 획득합니다.
-3. 획득한 동물은 '가방'에서 다시 볼 수 있어요.`,
+1. 학교 곳곳에 숨겨진 동물 QR코드를 찾아 스캔해보세요.
+2. 제시된 퀴즈를 맞히면 해당 동물을 획득합니다.
+3. 획득한 동물은 '가방'에서 다시 볼 수 있어요.
+4. 모든 동물을 모으면 보물상자가 열리고, 숨겨진 비밀번호가 보입니다.
+5. 숨겨진 비밀번호를 가지고 선생님께 오세요.`,
 
         // 메시지 설정
         msgCorrect: "정답입니다! 🎉 보물을 획득했어요!",
@@ -241,16 +243,16 @@ const gameConfig = {
     // QR코드를 만들 때 사용하는 단어("cat", "ball")가 곧 ID가 됩니다.
     qrData: {
         
-        // [1번 아이템] 사자
+        // [1번 아이템] 고양이
         "cat": {
-            icon: "🦁", // 가방에 표시될 아이콘
-            name: "용맹한 사자",
+            icon: "🐱", // 가방에 표시될 아이콘
+            name: "고양이",
             
             // 퀴즈 설정 (주관식)
             quiz: {
                 active: true, // 퀴즈 있음
-                question: "이 동물은 '백수의 왕'입니다. 누구일까요?",
-                answers: ["사자", "lion", "숫사자"] // 정답 리스트 (유사 답안 포함)
+                question: "1:1=?",
+                answers: ["2", "둘", "이"] // 정답 리스트 (유사 답안 포함)
             },
             
             // 보상 (이미지 여러 장 가능)
