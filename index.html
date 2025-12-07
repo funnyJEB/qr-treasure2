@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QR 보물찾기 by금배과학</title>
+    <title>QR 보물찾기 v13.3</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -25,6 +25,7 @@
             color: var(--text);
             text-align: center;
             user-select: none;
+            -webkit-tap-highlight-color: transparent; /* 터치 시 파란 박스 제거 */
         }
         
         .container {
@@ -57,49 +58,65 @@
             width: 100%;
             min-height: 300px; /* 높이 유동적 */
             background: #000;
-            border-radius: 15px;
+            border-radius: 20px;
             margin-bottom: 20px;
             overflow: hidden;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* [수정됨] 라이브러리 비디오 꽉 차게 설정 */
         #reader { width: 100%; height: 100%; }
         #reader video {
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover !important; /* 화면 꽉 차게 */
+            object-fit: cover !important;
         }
 
-        /* [추가됨] 가짜 하얀 테두리 (디자인용) */
+        /* 가짜 하얀 테두리 */
         .scan-frame {
             position: absolute;
             width: 200px;
             height: 200px;
             border: 4px solid rgba(255, 255, 255, 0.9);
             border-radius: 20px;
-            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5); /* 테두리 바깥 어둡게 */
-            pointer-events: none; /* 터치 통과 */
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+            pointer-events: none;
             z-index: 10;
         }
         
-        /* 카메라 꺼졌을 때 보이는 버튼 */
+        /* [수정됨] 카메라 대기 화면 (버튼처럼 꾸미기) */
         #camera-placeholder {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #333;
+            background: linear-gradient(135deg, #434343 0%, #000000 100%); /* 고급진 그라데이션 */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
             cursor: pointer;
-            z-index: 20; /* 테두리보다 위에 있어야 함 */
+            z-index: 20;
+            transition: all 0.2s;
         }
-        .camera-icon { font-size: 3rem; margin-bottom: 10px; }
+        #camera-placeholder:active { transform: scale(0.98); background: #222; }
+        
+        /* 카메라 아이콘 키우기 */
+        .camera-icon { 
+            font-size: 5rem; 
+            margin-bottom: 15px; 
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+        .camera-text {
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: 2px solid white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.1);
+        }
 
         /* 목표 구역 */
         .goal-area {
@@ -128,14 +145,35 @@
         /* 가방 */
         .bag-container { background: #eee; border-radius: 15px; padding: 15px; }
         .grid-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;}
+        
+        /* [수정됨] 아이템 슬롯 스타일 (회색 처리) */
         .item-slot {
             aspect-ratio: 1/1; background: white; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 2rem; /* 이모지 크기 키움 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer; position: relative;
+            transition: transform 0.1s;
         }
-        .item-slot.locked { color: #ccc; background: #ddd; cursor: default; }
-        .item-check { position: absolute; bottom: -5px; right: -5px; font-size: 1rem; }
+        
+        /* 잠긴 상태: 흑백 + 반투명 */
+        .item-slot.locked { 
+            filter: grayscale(100%); 
+            opacity: 0.4; 
+            background: #e0e0e0;
+            cursor: default;
+            transform: scale(0.95);
+        }
+        
+        /* 찾은 상태: 원래 색 + 선명함 */
+        .item-slot.found {
+            filter: grayscale(0%);
+            opacity: 1;
+            border: 2px solid var(--primary);
+        }
+        .item-slot.found:active { transform: scale(0.9); }
+        
+        .item-check { position: absolute; bottom: -5px; right: -5px; font-size: 1rem; filter: none !important;}
 
         /* 3. 팝업 & 공통 버튼 */
         .modal-overlay {
@@ -143,22 +181,41 @@
             background: rgba(0,0,0,0.8); z-index: 999; display: none;
             align-items: center; justify-content: center;
         }
+        
+        /* [수정됨] 팝업창 크기 최적화 */
         .modal-box {
-            background: white; width: 85%; max-width: 400px;
-            border-radius: 20px; padding: 25px; text-align: center;
-            position: relative; max-height: 85vh; overflow-y: auto;
+            background: white; 
+            width: 85%;       /* 화면의 85%만 차지 */
+            max-width: 320px; /* 너무 커지지 않게 제한 */
+            max-height: 80vh; /* 화면 높이의 80%까지만 */
+            overflow-y: auto; /* 내용이 길면 스크롤 생김 */
+            border-radius: 20px; 
+            padding: 20px; 
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+        
+        .image-scroll-box {
+            display: flex; flex-direction: column; gap: 10px; margin: 15px 0;
+            max-height: 200px; overflow-y: auto; border-radius: 10px;
+        }
+        .reward-img { width: 100%; border-radius: 10px; }
+
         .btn {
             background: var(--primary); color: white; border: none;
-            padding: 12px 30px; font-size: 1.2rem; border-radius: 50px;
+            padding: 10px 20px; font-size: 1.1rem; border-radius: 50px;
             cursor: pointer; font-family: 'Gamja Flower', sans-serif; margin-top: 10px; width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
+        .btn:active { transform: translateY(2px); box-shadow: none; }
         .btn-secondary { background: var(--secondary); }
         .btn-danger { background: var(--danger); }
         
         input[type="text"] {
             width: 80%; padding: 10px; font-size: 1.1rem;
             border: 2px solid #ddd; border-radius: 10px; margin: 10px 0; text-align: center;
+            font-family: 'Gamja Flower', sans-serif;
         }
 
         /* 관리자 버튼 및 모달 */
@@ -176,9 +233,9 @@
 
         /* 토스트 메시지 */
         #toast {
-            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            visibility: hidden; min-width: 250px; background-color: rgba(0,0,0,0.8); color: #fff;
             text-align: center; border-radius: 50px; padding: 16px; position: fixed;
-            z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%);
+            z-index: 1000; left: 50%; bottom: 80px; transform: translateX(-50%);
             font-size: 1rem; opacity: 0; transition: opacity 0.3s;
         }
         #toast.show { visibility: visible; opacity: 1; }
@@ -214,7 +271,7 @@
 
             <div id="camera-placeholder" onclick="Game.openCamera()">
                 <div class="camera-icon">📷</div>
-                <div>터치하여 카메라 켜기</div>
+                <div class="camera-text">터치하여 카메라 켜기</div>
             </div>
         </div>
 
@@ -236,14 +293,10 @@
     <div id="admin-modal" class="modal-overlay">
         <div class="modal-box">
             <h2 style="margin-top:0;">⚙️ 관리자 설정</h2>
-            
             <button class="btn btn-danger" onclick="Admin.resetAll()">🔄 전체 데이터 초기화</button>
-            
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            
             <p style="text-align:left; font-weight:bold; margin-bottom:5px;">🗑️ 개별 삭제 (누르면 삭제됨)</p>
             <div id="admin-list" class="admin-grid"></div>
-
             <button class="btn btn-secondary" onclick="Admin.closeMenu()">닫기</button>
         </div>
     </div>
@@ -260,10 +313,10 @@
  */
 const gameConfig = {
     meta: {
-        title: "🕵️‍♀️ 학교 보물찾기 v13_test",
+        title: "🕵️‍♀️ 학교 보물찾기 v13.3",
         subTitle: "친구들을 모두 찾아 선물상자를 열어보세요!",
         siteUrl: "https://funnyjeb.github.io/qr-treasure2", 
-        introImage: "https://private-user-images.githubusercontent.com/111253985/523455363-23d57fc1-7b5d-49bc-b88b-60819d46149b.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjUxMTEwMDcsIm5iZiI6MTc2NTExMDcwNywicGF0aCI6Ii8xMTEyNTM5ODUvNTIzNDU1MzYzLTIzZDU3ZmMxLTdiNWQtNDliYy1iODhiLTYwODE5ZDQ2MTQ5Yi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwN1QxMjMxNDdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0wZjE3MTNkOWFmYzk0ZjIxNDFjOTI0MzZlYWUxMDBkMGU0YzllZWYxMzc2ZmQzZWNhODQ1MDllOGM0YTRiZTM0JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.MT78eoopvuG-2STrkW0UVo7144rGMzXpgqrmFnJvs2Y",
+        introImage: "https://private-user-images.githubusercontent.com/111253985/523455363-23d57fc1-7b5d-49bc-b88b-60819d46149b.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjUxMDk3MzIsIm5iZiI6MTc2NTEwOTQzMiwicGF0aCI6Ii8xMTEyNTM5ODUvNTIzNDU1MzYzLTIzZDU3ZmMxLTdiNWQtNDliYy1iODhiLTYwODE5ZDQ2MTQ5Yi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwN1QxMjEwMzJaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT03OGNiYzcxNGZkOTEzZTZiNzg5M2M5NTg4Y2ExYzZjYzczYWVhNWUxODkzNjlmNzdkYWUyZDM1NmVjNWNkNmQzJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.baOuPEc8uKvs8xh9hkCf5DnBjpFu3yo7ILyOOtrojgE",
         introDesc: "1. '카메라 켜기'를 눌러 QR을 찾으세요.\n2. QR을 찾으면 카메라가 자동으로 꺼집니다.\n3. 다시 찾으려면 화면을 터치하세요.",
         msgCorrect: "정답입니다! 🎉",
         msgWrong: "틀렸습니다. 다시 시도해보세요. 😅",
@@ -333,11 +386,7 @@ const Game = {
             Game.scanner = new Html5Qrcode("reader");
         }
         
-        // [수정된 설정] 테두리 제거, 비율 자동 (인식률 최적화)
-        const config = { 
-            fps: 10,
-            // qrbox와 aspectRatio를 지워서 라이브러리 버그 회피 및 인식률 향상
-        };
+        const config = { fps: 10 };
         
         Game.scanner.start({ facingMode: "environment" }, config, Game.onScan)
         .catch(err => {
@@ -361,7 +410,6 @@ const Game = {
     },
 
     onScan: (decodedText, decodedResult) => {
-        // [중요] 스캔 되자마자 바로 카메라 끄기
         Game.closeCamera();
 
         const id = decodedText.trim();
@@ -397,11 +445,16 @@ const Game = {
         Object.keys(gameConfig.qrData).forEach(key => {
             const item = gameConfig.qrData[key];
             const isFound = Game.foundItems.has(key);
+            
             const slot = document.createElement('div');
-            slot.className = `item-slot ${isFound ? '' : 'locked'}`;
-            slot.innerText = isFound ? item.icon : "";
+            // 찾았으면 'found', 못찾았으면 'locked' 클래스 적용
+            slot.className = `item-slot ${isFound ? 'found' : 'locked'}`;
+            
+            // [중요] 물음표 대신 원래 아이콘을 보여줌 (CSS에서 회색처리)
+            slot.innerText = item.icon;
+            
             if (!isFound) {
-                slot.innerHTML = `<span style="font-size:1rem; opacity:0.5;">❓</span>`;
+                // 잠긴 상태일 땐 클릭 불가
             } else {
                 slot.innerHTML += `<span class="item-check">✅</span>`;
                 slot.onclick = () => { Popup.showReward(key, false); };
@@ -531,7 +584,7 @@ const Admin = {
 
     closeMenu: () => {
         document.getElementById('admin-modal').style.display = 'none';
-        Game.updateUI(); // 변경사항 적용
+        Game.updateUI(); 
     },
 
     renderList: () => {
@@ -556,7 +609,7 @@ const Admin = {
         if(confirm(`'${item.name}' (${item.icon}) 획득을 취소하시겠습니까?`)) {
             Game.foundItems.delete(id);
             localStorage.setItem(STORAGE_KEY, JSON.stringify([...Game.foundItems]));
-            Admin.renderList(); // 리스트 갱신
+            Admin.renderList(); 
             Toast.show("삭제되었습니다.");
         }
     },
