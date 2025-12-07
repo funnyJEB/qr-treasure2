@@ -6,7 +6,6 @@
     <title>QR 보물찾기 by금배과학</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
-    
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
@@ -53,22 +52,38 @@
         /* 2. 게임 화면 */
         #game-screen { display: none; padding: 20px; padding-bottom: 80px; }
         
-        /* 카메라 영역 (중요) */
+        /* [수정됨] 카메라 영역 스타일 */
         #camera-area {
             width: 100%;
-            height: 300px; /* 고정 높이 */
+            min-height: 300px; /* 높이 유동적 */
             background: #000;
             border-radius: 15px;
             margin-bottom: 20px;
             overflow: hidden;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        /* [수정됨] 라이브러리 비디오 꽉 차게 설정 */
         #reader { width: 100%; height: 100%; }
         #reader video {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important; /* 화면 꽉 차게 */
+        }
+
+        /* [추가됨] 가짜 하얀 테두리 (디자인용) */
+        .scan-frame {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 4px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5); /* 테두리 바깥 어둡게 */
+            pointer-events: none; /* 터치 통과 */
+            z-index: 10;
         }
         
         /* 카메라 꺼졌을 때 보이는 버튼 */
@@ -82,7 +97,7 @@
             justify-content: center;
             color: white;
             cursor: pointer;
-            z-index: 10;
+            z-index: 20; /* 테두리보다 위에 있어야 함 */
         }
         .camera-icon { font-size: 3rem; margin-bottom: 10px; }
 
@@ -193,7 +208,11 @@
         </div>
 
         <div id="camera-area">
-            <div id="reader"></div> <div id="camera-placeholder" onclick="Game.openCamera()">
+            <div id="reader"></div>
+            
+            <div class="scan-frame"></div>
+
+            <div id="camera-placeholder" onclick="Game.openCamera()">
                 <div class="camera-icon">📷</div>
                 <div>터치하여 카메라 켜기</div>
             </div>
@@ -223,8 +242,7 @@
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
             
             <p style="text-align:left; font-weight:bold; margin-bottom:5px;">🗑️ 개별 삭제 (누르면 삭제됨)</p>
-            <div id="admin-list" class="admin-grid">
-                </div>
+            <div id="admin-list" class="admin-grid"></div>
 
             <button class="btn btn-secondary" onclick="Admin.closeMenu()">닫기</button>
         </div>
@@ -306,7 +324,6 @@ const Game = {
     initGame: () => {
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
-        // 시작할 때는 카메라는 꺼진 상태로 대기
     },
 
     openCamera: () => {
@@ -316,14 +333,15 @@ const Game = {
             Game.scanner = new Html5Qrcode("reader");
         }
         
+        // [수정된 설정] 테두리 제거, 비율 자동 (인식률 최적화)
         const config = { 
             fps: 10,
-            qrbox: 250
+            // qrbox와 aspectRatio를 지워서 라이브러리 버그 회피 및 인식률 향상
         };
-                
+        
         Game.scanner.start({ facingMode: "environment" }, config, Game.onScan)
         .catch(err => {
-            alert("카메라 시작 오류: " + err);
+            alert("카메라 시작 오류 (HTTPS 필수): " + err);
             Game.closeCamera();
         });
     },
