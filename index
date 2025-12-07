@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>QR 보물찾기 v10</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        /* [스타일 정의] 수정하지 않아도 예쁘게 나옵니다 */
+        :root {
+            --primary: #4CAF50;
+            --secondary: #FF9800;
+            --bg: #F0F9F0;
+            --text: #333;
+        }
+        body {
+            font-family: 'Gamja Flower', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            text-align: center;
+        }
+        
+        /* 컨테이너 */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 1. 시작 화면 */
+        #start-screen {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .main-img {
+            width: 80%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 2. 게임 화면 */
+        #game-screen {
+            display: none;
+            padding: 20px;
+        }
+        #reader {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 20px;
+        }
+
+        /* 가방 (인벤토리) */
+        .bag-container {
+            background: #eee;
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .bag-title { margin: 0 0 10px 0; font-size: 1.2rem; }
+        .grid-box {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 한 줄에 4개 */
+            gap: 10px;
+        }
+        .item-slot {
+            aspect-ratio: 1/1;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .item-slot.locked { color: #ccc; background: #ddd; cursor: default; }
+        .item-slot:active { transform: scale(0.9); }
+
+        /* 3. 팝업 (퀴즈 & 보상) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            display: none; /* 평소엔 숨김 */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-box {
+            background: white;
+            width: 85%;
+            max-width: 400px;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: none; border: none;
+            font-size: 1.5rem; cursor: pointer;
+        }
+        
+        /* 이미지 슬라이드 (여러 장일 경우) */
+        .image-scroll-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+            max-height: 250px;
+            overflow-y: auto; /* 세로 스크롤 */
+            border: 1px solid #eee;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        .reward-img { width: 100%; border-radius: 10px; }
+
+        /* 공통 버튼 */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Gamja Flower', sans-serif;
+            margin-top: 10px;
+        }
+        .btn-secondary { background: var(--secondary); }
+        
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-family: 'Gamja Flower', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="start-screen">
+        <h1 id="title-text" style="font-size: 2.5rem; margin-bottom: 10px;">로딩중...</h1>
+        <p id="subtitle-text" style="font-size: 1.2rem; color: #666;">잠시만 기다려주세요</p>
+        
+        <img id="intro-img" class="main-img" src="" alt="Intro">
+        
+        <p id="intro-desc" style="white-space: pre-wrap;">설명글 로딩중...</p>
+        
+        <button class="btn" onclick="Game.start()">탐험 시작하기! ▶</button>
+        
+        <p style="font-size: 0.8rem; color: #aaa; margin-top: 30px;">
+            QR URL: <span id="site-url-text"></span>
+        </p>
+    </div>
+
+    <div id="game-screen">
+        <h2>📷 QR 코드를 비춰주세요</h2>
+        <div id="reader"></div>
+        <p id="scan-status">카메라를 불러오는 중입니다...</p>
+
+        <div class="bag-container">
+            <h3 class="bag-title">🎒 나의 보물 가방</h3>
+            <div id="inventory-grid" class="grid-box">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="Popup.close()">✖</button>
+            
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/**
+ * ============================================================================
+ * 🛠️ [선생님 설정 구역] gameConfig
+ * 이 곳의 내용만 수정하면 게임의 모든 것이 바뀝니다!
+ * ============================================================================
+ */
+const gameConfig = {
+    
+    // 1. 기본 설정
+    meta: {
+        title: "🕵️‍♀️ 숲속의 동물 찾기 v10",
+        subTitle: "학교 정원에 숨겨진 친구들을 찾아라!",
+        
+        // 이 주소는 화면 하단에 표시되어 선생님이 확인하기 좋습니다.
+        siteUrl: "https://teacher.github.io/qr-game", 
+        
+        // 시작 화면 이미지 (깃허브 이슈 이미지 주소 추천)
+        introImage: "https://images.unsplash.com/photo-1596495578065-6e0763fa1178?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80",
+        
+        introDesc: `[게임 방법]
+1. 학교 곳곳에 숨겨진 QR코드를 찾으세요.
+2. 퀴즈를 맞히면 동물을 획득합니다.
+3. 획득한 동물은 '가방'에서 다시 볼 수 있어요.`,
+
+        // 메시지 설정
+        msgCorrect: "정답입니다! 🎉 보물을 획득했어요!",
+        msgWrong: "저런.. 정답이 아닙니다. 😅 다시 생각해보세요!",
+        msgAlreadyFound: "이미 찾은 친구입니다! 가방을 확인해보세요."
+    },
+
+    // 2. QR코드 데이터 (아이템 리스트)
+    // QR코드를 만들 때 사용하는 단어("cat", "ball")가 곧 ID가 됩니다.
+    qrData: {
+        
+        // [1번 아이템] 사자
+        "cat": {
+            icon: "🦁", // 가방에 표시될 아이콘
+            name: "용맹한 사자",
+            
+            // 퀴즈 설정 (주관식)
+            quiz: {
+                active: true, // 퀴즈 있음
+                question: "이 동물은 '백수의 왕'입니다. 누구일까요?",
+                answers: ["사자", "lion", "숫사자"] // 정답 리스트 (유사 답안 포함)
+            },
+            
+            // 보상 (이미지 여러 장 가능)
+            reward: {
+                images: [
+                    "https://cdn-icons-png.flaticon.com/512/616/616408.png", // 예시 이미지
+                    // 여기에 이미지 주소를 콤마(,)로 계속 추가하면 됨
+                ],
+                desc: "축하합니다! 사자는 본관 1층 거울 앞에 숨어있었습니다.\n(가방에서 언제든 다시 볼 수 있어요)"
+            }
+        },
+
+        // [2번 아이템] 축구공
+        "ball": {
+            icon: "⚽",
+            name: "전설의 축구공",
+            
+            quiz: {
+                active: true,
+                question: "손흥민 선수의 등번호는 몇 번일까요?",
+                answers: ["7", "7번", "칠", "seven"]
+            },
+            
+            reward: {
+                images: [], // 이미지가 없으면 빈칸 []
+                desc: "운동장 골대 뒤편으로 가보세요! 다음 힌트가 있습니다."
+            }
+        },
+
+        // [3번 아이템] 지도 (퀴즈 없이 바로 획득하는 예시)
+        "map": {
+            icon: "🗺️",
+            name: "보물 지도",
+            
+            quiz: {
+                active: false // 퀴즈 없음 (바로 획득)
+            },
+            
+            reward: {
+                images: ["https://cdn-icons-png.flaticon.com/512/854/854878.png"],
+                desc: "지도를 획득했습니다! 별표시 된 곳으로 가세요."
+            }
+        }
+        
+        // 여기에 계속 추가 가능...
+        // "key": { ... },
+    }
+};
+
+/**
+ * ============================================================================
+ * 🚀 [시스템 로직]
+ * 이 아래는 코드를 잘 아는 경우가 아니면 수정하지 않아도 됩니다.
+ * ============================================================================
+ */
+
+const Game = {
+    foundItems: new Set(), // 찾은 아이템 ID 저장
+    scanner: null,
+    isScanning: false,
+
+    // 초기화
+    init: () => {
+        // 메타 정보 적용
+        document.getElementById('title-text').innerText = gameConfig.meta.title;
+        document.getElementById('subtitle-text').innerText = gameConfig.meta.subTitle;
+        document.getElementById('intro-img').src = gameConfig.meta.introImage;
+        document.getElementById('intro-desc').innerText = gameConfig.meta.introDesc;
+        document.getElementById('site-url-text').innerText = gameConfig.meta.siteUrl;
+
+        // 인벤토리 생성
+        Game.renderInventory();
+    },
+
+    // 게임 시작 (카메라 켜기)
+    start: () => {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        
+        // QR 스캐너 실행
+        Game.scanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        Game.scanner.start({ facingMode: "environment" }, config, Game.onScan)
+        .catch(err => {
+            document.getElementById('scan-status').innerText = "카메라 권한이 필요합니다. 새로고침 해주세요.";
+        });
+        Game.isScanning = true;
+    },
+
+    // 스캔 성공 시
+    onScan: (decodedText, decodedResult) => {
+        // 팝업이 떠있으면 스캔 무시
+        if (!Game.isScanning) return;
+
+        const id = decodedText.trim(); // 공백 제거
+        const item = gameConfig.qrData[id];
+
+        // 1. 유효하지 않은 QR인 경우
+        if (!item) {
+            alert("이 게임의 QR코드가 아닙니다.");
+            return;
+        }
+
+        // 2. 이미 찾은 경우
+        if (Game.foundItems.has(id)) {
+            // 스캔 잠시 중지 (중복 알림 방지)
+            Game.pauseScan();
+            alert(gameConfig.meta.msgAlreadyFound);
+            setTimeout(Game.resumeScan, 2000); // 2초 뒤 재개
+            return;
+        }
+
+        // 3. 새로운 아이템 발견! -> 퀴즈 or 즉시 획득
+        Game.pauseScan(); // 팝업 띄우는 동안 스캔 중지
+        
+        if (item.quiz && item.quiz.active) {
+            Popup.showQuiz(id);
+        } else {
+            Game.getItem(id);
+        }
+    },
+
+    // 아이템 획득 처리
+    getItem: (id) => {
+        Game.foundItems.add(id);
+        Game.renderInventory(); // 가방 업데이트
+        Popup.showReward(id, true); // 보상 팝업 (첫 획득)
+    },
+
+    // 인벤토리(가방) 그리기
+    renderInventory: () => {
+        const grid = document.getElementById('inventory-grid');
+        grid.innerHTML = ""; // 초기화
+
+        // qrData에 있는 모든 키를 가져와서 칸 만들기
+        Object.keys(gameConfig.qrData).forEach(key => {
+            const item = gameConfig.qrData[key];
+            const isFound = Game.foundItems.has(key);
+            
+            const slot = document.createElement('div');
+            slot.className = `item-slot ${isFound ? '' : 'locked'}`;
+            slot.innerText = isFound ? item.icon : "❓";
+            
+            // 찾은 아이템은 클릭하면 다시 보기 가능
+            if (isFound) {
+                slot.onclick = () => {
+                    Game.pauseScan(); // 보는 동안 스캔 중지
+                    Popup.showReward(key, false);
+                };
+            }
+            
+            grid.appendChild(slot);
+        });
+    },
+
+    pauseScan: () => { Game.isScanning = false; },
+    resumeScan: () => { Game.isScanning = true; }
+};
+
+const Popup = {
+    overlay: document.getElementById('modal'),
+    content: document.getElementById('modal-content'),
+
+    // 퀴즈 보여주기
+    showQuiz: (id) => {
+        const item = gameConfig.qrData[id];
+        const q = item.quiz;
+
+        Popup.content.innerHTML = `
+            <h2 style="margin-top:0;">🧩 퀴즈 도전!</h2>
+            <p style="font-size:1.1rem; font-weight:bold;">${q.question}</p>
+            <input type="text" id="quiz-input" placeholder="정답을 입력하세요" autocomplete="off">
+            <br>
+            <button class="btn" onclick="Popup.checkAnswer('${id}')">확인</button>
+        `;
+        Popup.overlay.style.display = "flex";
+    },
+
+    // 정답 확인
+    checkAnswer: (id) => {
+        const input = document.getElementById('quiz-input').value.trim().toLowerCase().replace(/\s+/g, ''); // 공백제거, 소문자
+        const answers = gameConfig.qrData[id].quiz.answers.map(a => a.toLowerCase().replace(/\s+/g, ''));
+        
+        if (answers.includes(input)) {
+            // 정답!
+            alert(gameConfig.meta.msgCorrect);
+            Game.getItem(id); // 보상 화면으로 넘어감
+        } else {
+            // 오답
+            alert(gameConfig.meta.msgWrong);
+            document.getElementById('quiz-input').value = "";
+            document.getElementById('quiz-input').focus();
+        }
+    },
+
+    // 보상/정보 보여주기 (isNew: 처음 얻었는지, 다시보는지)
+    showReward: (id, isNew) => {
+        const item = gameConfig.qrData[id];
+        
+        // 이미지 HTML 생성 (여러 장일 경우 모두 표시)
+        let imgHtml = "";
+        if (item.reward.images && item.reward.images.length > 0) {
+            imgHtml = `<div class="image-scroll-box">`;
+            item.reward.images.forEach(url => {
+                imgHtml += `<img src="${url}" class="reward-img"><br>`;
+            });
+            imgHtml += `</div>`;
+        }
+
+        Popup.content.innerHTML = `
+            <div style="font-size:3rem;">${item.icon}</div>
+            <h2 style="margin: 10px 0;">${item.name}</h2>
+            ${imgHtml}
+            <div style="background:#f9f9f9; padding:10px; border-radius:10px; text-align:left; white-space: pre-wrap;">${item.reward.desc}</div>
+            <button class="btn btn-secondary" onclick="Popup.close()">확인</button>
+        `;
+        Popup.overlay.style.display = "flex";
+    },
+
+    close: () => {
+        Popup.overlay.style.display = "none";
+        Game.resumeScan(); // 팝업 닫으면 다시 스캔 시작
+    }
+};
+
+// 페이지 로드 시 시작
+document.addEventListener("DOMContentLoaded", Game.init);
+
+</script>
+</body>
+</html>
