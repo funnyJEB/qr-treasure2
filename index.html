@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QR 보물찾기 v13.3</title>
+    <title>QR 보물찾기 by금배과학</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -25,7 +25,7 @@
             color: var(--text);
             text-align: center;
             user-select: none;
-            -webkit-tap-highlight-color: transparent; /* 터치 시 파란 박스 제거 */
+            -webkit-tap-highlight-color: transparent;
         }
         
         .container {
@@ -53,10 +53,10 @@
         /* 2. 게임 화면 */
         #game-screen { display: none; padding: 20px; padding-bottom: 80px; }
         
-        /* [수정됨] 카메라 영역 스타일 */
+        /* 카메라 영역 */
         #camera-area {
             width: 100%;
-            min-height: 300px; /* 높이 유동적 */
+            min-height: 300px;
             background: #000;
             border-radius: 20px;
             margin-bottom: 20px;
@@ -65,7 +65,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
         }
 
         #reader { width: 100%; height: 100%; }
@@ -87,11 +87,14 @@
             z-index: 10;
         }
         
-        /* [수정됨] 카메라 대기 화면 (버튼처럼 꾸미기) */
+        /* [수정됨] 카메라 대기 화면 (밝은 테마 적용!) */
         #camera-placeholder {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #434343 0%, #000000 100%); /* 고급진 그라데이션 */
+            
+            /* 🔥 에메랄드 숲 테마 (밝은 초록색) */
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -101,21 +104,21 @@
             z-index: 20;
             transition: all 0.2s;
         }
-        #camera-placeholder:active { transform: scale(0.98); background: #222; }
+        #camera-placeholder:active { transform: scale(0.98); filter: brightness(0.9); }
         
-        /* 카메라 아이콘 키우기 */
         .camera-icon { 
             font-size: 5rem; 
             margin-bottom: 15px; 
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
         }
         .camera-text {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            border: 2px solid white;
-            padding: 8px 20px;
+            border: 3px solid rgba(255,255,255,0.8);
+            padding: 10px 25px;
             border-radius: 50px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         /* 목표 구역 */
@@ -146,56 +149,36 @@
         .bag-container { background: #eee; border-radius: 15px; padding: 15px; }
         .grid-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;}
         
-        /* [수정됨] 아이템 슬롯 스타일 (회색 처리) */
+        /* 아이템 슬롯 */
         .item-slot {
             aspect-ratio: 1/1; background: white; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; /* 이모지 크기 키움 */
+            font-size: 2rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer; position: relative;
             transition: transform 0.1s;
         }
-        
-        /* 잠긴 상태: 흑백 + 반투명 */
         .item-slot.locked { 
-            filter: grayscale(100%); 
-            opacity: 0.4; 
-            background: #e0e0e0;
-            cursor: default;
-            transform: scale(0.95);
+            filter: grayscale(100%); opacity: 0.4; background: #e0e0e0;
+            cursor: default; transform: scale(0.95);
         }
-        
-        /* 찾은 상태: 원래 색 + 선명함 */
         .item-slot.found {
-            filter: grayscale(0%);
-            opacity: 1;
-            border: 2px solid var(--primary);
+            filter: grayscale(0%); opacity: 1; border: 2px solid var(--primary);
         }
         .item-slot.found:active { transform: scale(0.9); }
-        
         .item-check { position: absolute; bottom: -5px; right: -5px; font-size: 1rem; filter: none !important;}
 
-        /* 3. 팝업 & 공통 버튼 */
+        /* 팝업 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); z-index: 999; display: none;
             align-items: center; justify-content: center;
         }
-        
-        /* [수정됨] 팝업창 크기 최적화 */
         .modal-box {
-            background: white; 
-            width: 85%;       /* 화면의 85%만 차지 */
-            max-width: 320px; /* 너무 커지지 않게 제한 */
-            max-height: 80vh; /* 화면 높이의 80%까지만 */
-            overflow-y: auto; /* 내용이 길면 스크롤 생김 */
-            border-radius: 20px; 
-            padding: 20px; 
-            text-align: center;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: white; width: 85%; max-width: 320px; max-height: 80vh;
+            overflow-y: auto; border-radius: 20px; padding: 20px; 
+            text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        
         .image-scroll-box {
             display: flex; flex-direction: column; gap: 10px; margin: 15px 0;
             max-height: 200px; overflow-y: auto; border-radius: 10px;
@@ -218,17 +201,13 @@
             font-family: 'Gamja Flower', sans-serif;
         }
 
-        /* 관리자 버튼 및 모달 */
+        /* 관리자 */
         .admin-btn {
             margin-top: 30px; background: none; border: 1px solid #ccc; color: #999;
             padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;
         }
-        .admin-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;
-        }
-        .admin-item {
-            border: 2px solid #ddd; border-radius: 10px; padding: 10px; font-size: 1.5rem; cursor: pointer;
-        }
+        .admin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+        .admin-item { border: 2px solid #ddd; border-radius: 10px; padding: 10px; font-size: 1.5rem; cursor: pointer; }
         .admin-item:hover { background: #ffebee; border-color: red; }
 
         /* 토스트 메시지 */
@@ -259,7 +238,7 @@
         <div id="final-goal" class="goal-area" onclick="Game.checkFinalStatus()">
             <div id="final-icon" class="goal-icon">🎁</div>
             <div class="goal-info">
-                <div id="final-title" class="goal-title">최종 보물상자</div>
+                <div id="final-title" class="goal-title">보물상자</div>
                 <div id="final-progress" class="goal-progress">열쇠 모으는 중... (0/0)</div>
             </div>
         </div>
@@ -271,7 +250,7 @@
 
             <div id="camera-placeholder" onclick="Game.openCamera()">
                 <div class="camera-icon">📷</div>
-                <div class="camera-text">터치하여 카메라 켜기</div>
+                <div class="camera-text">카메라 켜기</div>
             </div>
         </div>
 
@@ -295,7 +274,7 @@
             <h2 style="margin-top:0;">⚙️ 관리자 설정</h2>
             <button class="btn btn-danger" onclick="Admin.resetAll()">🔄 전체 데이터 초기화</button>
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <p style="text-align:left; font-weight:bold; margin-bottom:5px;">🗑️ 개별 삭제 (누르면 삭제됨)</p>
+            <p style="text-align:left; font-weight:bold; margin-bottom:5px;">🗑️ 찾아낸 QR 취소하기</p>
             <div id="admin-list" class="admin-grid"></div>
             <button class="btn btn-secondary" onclick="Admin.closeMenu()">닫기</button>
         </div>
@@ -313,11 +292,15 @@
  */
 const gameConfig = {
     meta: {
-        title: "🕵️‍♀️ 학교 보물찾기 v13.3",
-        subTitle: "친구들을 모두 찾아 선물상자를 열어보세요!",
+        title: "🕵️‍♀️ QR 보물찾기",
+        subTitle: "숨겨진 QR들을 모두 찾아 보물상자를 열어보세요!",
         siteUrl: "https://funnyjeb.github.io/qr-treasure2", 
         introImage: "https://private-user-images.githubusercontent.com/111253985/523455363-23d57fc1-7b5d-49bc-b88b-60819d46149b.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjUxMTE1MTAsIm5iZiI6MTc2NTExMTIxMCwicGF0aCI6Ii8xMTEyNTM5ODUvNTIzNDU1MzYzLTIzZDU3ZmMxLTdiNWQtNDliYy1iODhiLTYwODE5ZDQ2MTQ5Yi5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMjA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIwN1QxMjQwMTBaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kOWM3OGM2MjM0ZDY3N2E0ZDE4NzE0NmRjNDc0MzAxYjUzOTIxZTVkMjFhMDllMzNiY2Y0ZDAwMWJlMzZiYTNhJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.dherk26sEsmA4dXOGG7D_5ZfBBmP60-yzpnVWzyyv40",
-        introDesc: "1. '카메라 켜기'를 눌러 QR을 찾으세요.\n2. QR을 찾으면 카메라가 자동으로 꺼집니다.\n3. 다시 찾으려면 화면을 터치하세요.",
+        introDesc: "1. 주변에 숨겨진 QR을 찾아보세요.\n
+                    2. QR을 찾았다면 '카메라 켜기'를 눌러 스캔!\n
+                    3. 정확한 QR을 인식하면 특별한 일이 일어나요.\n
+                    4. 문제가 나온다면 정답도 맞춰야 해요!\n
+                    5. 모든 QR을 찾아 보물상자를 열었다면 선생님께 오세요!",
         msgCorrect: "정답입니다! 🎉",
         msgWrong: "틀렸습니다. 다시 시도해보세요. 😅",
         msgAlreadyFound: "이미 찾은 보물입니다!"
@@ -325,11 +308,12 @@ const gameConfig = {
     finalReward: {
         icon: "🔓", title: "축하합니다!",
         images: ["https://cdn-icons-png.flaticon.com/512/2855/2855523.png"], 
-        desc: "모든 미션을 완료했습니다!\n선생님께 이 화면을 보여주세요."
+        desc: "모든 미션을 완료했습니다!\n
+                선생님께 이 화면을 보여주세요."
     },
     qrData: {
         "cat": {
-            icon: "🦁", name: "사자",
+            icon: "😺", name: "고양이",
             quiz: { active: true, question: "백수의 왕이라 불리는 동물은?", answers: ["사자", "lion"] },
             reward: { images: ["https://cdn-icons-png.flaticon.com/512/616/616408.png"], desc: "사자를 찾았습니다!" }
         },
@@ -447,15 +431,10 @@ const Game = {
             const isFound = Game.foundItems.has(key);
             
             const slot = document.createElement('div');
-            // 찾았으면 'found', 못찾았으면 'locked' 클래스 적용
             slot.className = `item-slot ${isFound ? 'found' : 'locked'}`;
-            
-            // [중요] 물음표 대신 원래 아이콘을 보여줌 (CSS에서 회색처리)
             slot.innerText = item.icon;
             
-            if (!isFound) {
-                // 잠긴 상태일 땐 클릭 불가
-            } else {
+            if (isFound) {
                 slot.innerHTML += `<span class="item-check">✅</span>`;
                 slot.onclick = () => { Popup.showReward(key, false); };
             }
@@ -573,7 +552,7 @@ const Popup = {
 
 const Admin = {
     openMenu: () => {
-        const password = prompt("관리자 비밀번호 (기본: 1234)");
+        const password = prompt("관리자 비밀번호");
         if (password !== "1234") {
             if(password !== null) alert("비밀번호 불일치");
             return;
