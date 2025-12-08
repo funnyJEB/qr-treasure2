@@ -541,11 +541,15 @@ const Popup = {
             imgHtml = `<div class="image-scroll-box">` + 
                 item.reward.images.map(url => `<img src="${url}" class="reward-img">`).join('') + `</div>`;
         }
+        
         Popup.content.innerHTML = `
             <div style="font-size:4rem;">${item.icon}</div>
             <h2>${item.name}</h2>
-            ${imgHtml}
+            
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; text-align:left; white-space: pre-wrap;">${item.reward.desc}</div>
+            
+            ${imgHtml}
+            
             <button class="btn btn-secondary" onclick="Popup.closeAndCheckClear()">확인</button>
         `;
         Popup.overlay.style.display = "flex";
